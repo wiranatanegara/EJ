@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bandingkan Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        textarea {
+            width: 80%;
+            height: 150px;
+            margin-bottom: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        button {
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #output {
+            margin-top: 10px;
+            padding: 10px;
+            width: 80%;
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            background: #f9f9f9;
+            white-space: pre-line;
+            text-align: left;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+    <h2>Bandingkan Data</h2>
+
+    <label for="input1"><b>Reff EJ:</b></label>
+    <textarea id="input1" placeholder="Masukkan data pertama..."></textarea>
+
+    <label for="input2"><b>Reff Tric:</b></label>
+    <textarea id="input2" placeholder="Masukkan data kedua..."></textarea>
+
+    <button onclick="compareData()">Bandingkan</button>
+    <button onclick="copyText()">Salin</button>
+
+    <h3>Data yang hanya ada di Input 2:</h3>
+    <div id="output"></div>
+
+    <script>
+        function compareData() {
+            let input1 = document.getElementById("input1").value.split("\n").map(x => x.trim()).filter(Boolean);
+            let input2 = document.getElementById("input2").value.split("\n").map(x => x.trim()).filter(Boolean);
+
+            let set1 = new Set(input1);
+            let result = input2.filter(num => !set1.has(num));
+
+            document.getElementById("output").innerText = result.length ? result.join("\n") : "Tidak ada perbedaan";
+        }
+
+        function copyText() {
+            let outputText = document.getElementById("output").innerText;
+            navigator.clipboard.writeText(outputText).then(() => {
+                alert("Teks berhasil disalin!");
+            }).catch(err => {
+                alert("Gagal menyalin teks");
+            });
+        }
+    </script>
+</body>
+</html>

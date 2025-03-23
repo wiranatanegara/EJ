@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Data Transaksi ATM</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+        background-color: #f4f4f4;
+    }
+    .container {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+        text-align: center;
+    }
+    textarea {
+        width: 100%;
+        height: 150px;
+        margin-bottom: 10px;
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-bottom: 10px;
+    }
+    button:hover {
+        background: #218838;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background: #007bff;
+        color: white;
+    }
+</style>
+<body>
+    <div class="container">
+        <h2>Analisis Data Transaksi ATM</h2>
+        <textarea id="inputData" placeholder="Masukkan data transaksi di sini..."></textarea>
+        <button onclick="processData()">Proses Data</button>
+        <button onclick="filterNoCashTaken()">Tampilkan Hanya Tanpa Cash Taken</button>
+        <button onclick="filterErrors()">Tampilkan Hanya Error</button>
+        
+        <table id="outputTable">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Tanggal</th>
+                    <th>Jam</th>
+                    <th>ATM</th>
+                    <th>No Resi</th>
+                    <th>Rekening</th>
+                    <th>Jenis Transaksi</th>
+                    <th>Jumlah</th>
+                    <th>Cash</th>
+                    <th>Error</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        let transactions = [];
+        const errorKeywords = [
+            "CHIP CONTACT ERROR",
+            "LOW BILL MIX ERROR",
+            "EMV CARD SECURITY ERROR",
+            "HIGH BILL MIX ERROR",
+            "SMART EMV",
+            "COMMUNICATION ERROR",
+            "COMMUNICATION OFFLINE",
+            "TRANSACTION \\d+ FAILED",
+            "DISPENSER ERROR FLAG",
+            "DISPENSER ERROR",
+            "PHYSICAL CASSETTE \\d+ EMPTY"
+        ];
+    
+        function processData() {
+            let inputText = document.getElementById("inputData").value;
+            let lines = inputText.split("\n");
+            let tableBody = document.querySelector("#outputTable tbody");
+            tableBody.innerHTML = "";
+            transactions = [];
+            let currentTransaction = null;
+    
+            lines.forEach((line, index) => {
+                line = line.trim();
+                
+                // Deteksi TRANSACTION START
+                if (line.includes("TRANSACTION START")) {
+                    if (currentTransaction) {
+                        transactions.push(currentTransaction);
+                    }
+                    currentTransaction = {
+                        date: "-",
+                        time: "-",
+                        atm: "-",
+                        resi: "-",
+                        rekening: "-",
+                        jenis: "-",
+                        jumlah: "-",
+                        cashTaken: false,
+                        error: "",
+                        highlight: false
+                    };
+                }
+    
+                if (currentTransaction) {
+                    if (line.includes("CASH TAKEN")) currentTransaction.cashTaken = true;
+                    
+                    let dateMatch = line.match(/(\d{2}\/\d{2}\/\d{2}) (\d{2}:\d{2}:\d{2}) (\w+)/);
+                    if (dateMatch) {
+                        currentTransaction.date = dateMatch[1];
+                        currentTransaction.time = dateMatch[2];
+                        currentTransaction.atm = dateMatch[3];
+                    }
+                    
+                    let resiMatch = line.match(/(NO RESI|REFF NO)\s*:\s*(\d+)/i);
+                    if (resiMatch) currentTransaction.resi = resiMatch[2];
+                    
+                    let rekeningMatch = line.match(/(REKENING|REK\.?|NO\.? REK\.?)\s*:\s*(\d{10,16})/i);
+                    if (rekeningMatch) currentTransaction.rekening = rekeningMatch[2];
+                    
+                    let jumlahMatch = line.match(/JUMLAH\s*:\s*RP\.?\s*([\d,\.]+)/i);
+                    if (jumlahMatch) currentTransaction.jumlah = jumlahMatch[1].replace(/\./g, '');
+                    
+                    if (line.includes("PENARIKAN TUNAI")) currentTransaction.jenis = "Penarikan Tunai";
+                    if (line.includes("INFORMASI SALDO")) currentTransaction.jenis = "Cek Saldo";
+                    if (line.includes("TRANSFER")) currentTransaction.jenis = "Transfer";
+                    if (line.includes("DANA")) currentTransaction.jenis = "Dana";
+    
+                    errorKeywords.forEach(pattern => {
+                        if (new RegExp(pattern, "i").test(line)) {
+                            currentTransaction.error += line + "; ";
+                        }
+                    });
+                }
+    
+                if (index === lines.length - 1 && currentTransaction) {
+                    transactions.push(currentTransaction);
+                }
+            });
+    
+            highlightSurroundedErrors();
+            displayTransactions(transactions);
+        }
+    
+        function highlightSurroundedErrors() {
+            for (let i = 1; i < transactions.length - 1; i++) {
+                if (
+                    transactions[i - 1].resi !== "-" &&
+                    transactions[i + 1].resi !== "-" &&
+                    transactions[i].error !== "" &&
+                    transactions[i].jenis !== "Dana" &&  // Tambahan aturan: Tidak highlight jika jenis transaksi "Dana"
+                    !transactions[i].cashTaken // Tambahan aturan: Tidak highlight jika Cash Taken terisi data (true)
+                ) {
+                    transactions[i].highlight = true;
+                }
+            }
+        }
+    
+        function displayTransactions(data) {
+            let tableBody = document.querySelector("#outputTable tbody");
+            tableBody.innerHTML = "";
+            data.forEach((transaction, index) => {
+                let row = tableBody.insertRow();
+                if (transaction.highlight) {
+                    row.style.backgroundColor = "yellow";
+                }
+                row.insertCell(0).textContent = index + 1;
+                row.insertCell(1).textContent = transaction.date;
+                row.insertCell(2).textContent = transaction.time;
+                row.insertCell(3).textContent = transaction.atm;
+                row.insertCell(4).textContent = transaction.resi;
+                row.insertCell(5).textContent = transaction.rekening;
+                row.insertCell(6).textContent = transaction.jenis;
+                row.insertCell(7).textContent = transaction.jumlah !== "-" ? `Rp ${transaction.jumlah}` : "-";
+                row.insertCell(8).textContent = transaction.cashTaken ? "Cash Taken" : "-";
+                row.insertCell(9).textContent = transaction.error || "-";
+            });
+        }
+    
+        function filterNoCashTaken() {
+            displayTransactions(transactions.filter(t => !t.cashTaken));
+        }
+    
+        function filterErrors() {
+            displayTransactions(transactions.filter(t => t.error !== "" && !/bill/i.test(t.error)));
+        }
+    </script>
+    
+
+
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJ WIRA</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0A192F;
+            color: #64ffda;
+            margin: 20px;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .section {
+            width: 45%;
+            background: #112240;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px #00e6e6;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #00e6e6;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: #0a2239;
+            color: #64ffda;
+            border: 1px solid #00e6e6;
+            padding: 10px;
+            font-size: 14px;
+        }
+        button {
+            padding: 10px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border: none;
+            background-color: #00e6e6;
+            color: #112240;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #64ffda;
+        }
+        .output {
+            background: #011627;
+            padding: 10px;
+            border: 1px solid #00e6e6;
+            min-height: 80px;
+            text-align: left;
+            color: #64ffda;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .highlight {
+            background-color: yellow;
+            color: black;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Electric Journal Checker</h2>
+    <div class="container">
+        <div class="section">
+            <h3>Sortir Nomor Referensi</h3>
+            <textarea id="inputResi" placeholder="Masukkan teks di sini..."></textarea>
+            <button onclick="processResi()">Proses</button>
+            <button onclick="copyOutput('outputResi')">Salin</button>
+            <div class="output" id="outputResi"></div>
+        </div>
+        <div class="section">
+            <h3>Bandingkan Data</h3>
+            <textarea id="input1" placeholder="Masukkan data Sortir..."></textarea>
+            <textarea id="input2" placeholder="Masukkan data Tric..."></textarea>
+            <button onclick="compareData()">Bandingkan</button>
+            <button onclick="copyOutput('outputCompare')">Salin</button>
+            <div class="output" id="outputCompare"></div>
+        </div>
+    </div>
+
+    <script>
+        function processResi() {
+            let input = document.getElementById("inputResi").value;
+            let matches = [...input.matchAll(/(?:REFF NO|NO REF\.|NO RESI)\s*:\s*(\d+)/gi)];
+            let result = matches.map(m => m[1]);
+            
+            if (result.length === 0) {
+                document.getElementById("outputResi").textContent = "Tidak ada nomor referensi ditemukan";
+                return;
+            }
+            
+            let formattedResult = "";
+            for (let i = 0; i < result.length; i++) {
+                formattedResult += result[i] + " ";
+                if ((i + 1) % 12 === 0) {
+                    formattedResult += "\n";
+                }
+            }
+            
+            document.getElementById("outputResi").textContent = formattedResult.trim();
+            document.getElementById("input1").value = formattedResult.trim();
+        }
+
+        function compareData() {
+            let input1 = document.getElementById("input1").value.split(/\s+/).map(x => x.trim()).filter(Boolean);
+            let input2 = document.getElementById("input2").value.split(/\s+/).map(x => x.trim()).filter(Boolean);
+            let set1 = new Set(input1);
+            let result = input2.filter(num => !set1.has(num));
+            document.getElementById("outputCompare").textContent = result.length ? result.join("\n") : "Tidak ada perbedaan";
+            highlightMatchingNumbers();
+        }
+
+        function highlightMatchingNumbers() {
+            let outputResi = document.getElementById("outputResi");
+            let outputCompare = document.getElementById("outputCompare").textContent.split("\n").map(x => x.trim()).filter(Boolean);
+            let highlightedText = outputResi.textContent.split(/\s+/).map(num => 
+                outputCompare.includes(num) ? `<span class='highlight'>${num}</span>` : num
+            ).join(" ");
+            outputResi.innerHTML = highlightedText.replace(/(.{40,}?) /g, "$1\n");
+        }
+
+        function copyOutput(id) {
+            let outputElement = document.getElementById(id);
+            let text = outputElement.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Teks berhasil disalin!");
+            }).catch(() => {
+                alert("Gagal menyalin teks");
+            });
+        }
+    </script>
+</body>
+<h5>Wira Nata @2024</h5>
+</html>
