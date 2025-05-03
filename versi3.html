@@ -1,226 +1,147 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analisis Data Transaksi ATM</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analisis Data Transaksi ATM </title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:20px; background:#f4f4f4; }
+    .container { max-width:900px; margin:auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+    h2 { text-align:center; }
+    textarea { width:100%; height:160px; padding:10px; font-size:14px; border:1px solid #ccc; border-radius:5px; }
+    button { margin-top:10px; width:100%; padding:10px; font-size:16px; background:#dc3545; color:#fff; border:none; border-radius:5px; cursor:pointer; }
+    button:hover { background:#c82333; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:left; }
+    th { background:#343a40; color:#fff; }
+    .failed { background:#f8d7da; }
+    #detailOutput { margin-top:30px; }
+    .segmentDetail { margin-bottom:25px; }
+    .segmentDetail pre { background:#fff; padding:10px; border:1px solid #ccc; border-radius:4px; overflow-x:auto; }
+    .errorLine { background:yellow; display:block; }
+    .legend { margin-top:20px; }
+    .legend dt { font-weight:bold; margin-top:10px; }
+    .legend dd { margin:0 0 10px 20px; }
+  </style>
 </head>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        padding: 20px;
-        background-color: #f4f4f4;
-    }
-    .container {
-        max-width: 900px;
-        margin: auto;
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    }
-    h2 {
-        text-align: center;
-    }
-    textarea {
-        width: 100%;
-        height: 150px;
-        margin-bottom: 10px;
-        padding: 10px;
-        font-size: 14px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-    button {
-        display: block;
-        width: 100%;
-        padding: 10px;
-        font-size: 16px;
-        background: #28a745;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        margin-bottom: 10px;
-    }
-    button:hover {
-        background: #218838;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-    th, td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-    }
-    th {
-        background: #007bff;
-        color: white;
-    }
-</style>
 <body>
-    <div class="container">
-        <h2>Analisis Data Transaksi ATM</h2>
-        <textarea id="inputData" placeholder="Masukkan data transaksi di sini..."></textarea>
-        <button onclick="processData()">Proses Data</button>
-        <button onclick="filterNoCashTaken()">Tampilkan Hanya Tanpa Cash Taken</button>
-        <button onclick="filterErrors()">Tampilkan Hanya Error</button>
-        
-        <table id="outputTable">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Tanggal</th>
-                    <th>Jam</th>
-                    <th>ATM</th>
-                    <th>No Resi</th>
-                    <th>Rekening</th>
-                    <th>Jenis Transaksi</th>
-                    <th>Jumlah</th>
-                    <th>Cash</th>
-                    <th>Error</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
+  <div class="container">
+    <h2>Analisis Data Transaksi ATM </h2>
+    <textarea id="inputData" placeholder="Salin-paste log transaksi EJ di sini…"></textarea>
+    <button id="btnProcess">Tampilkan Hanya Gagal</button>
+
+    <table id="outputTable">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Tanggal</th>
+          <th>Waktu</th>
+          <th>Has Reply</th>
+          <th>TSI</th>
+          <th>Cash</th>
+          <th>Jumlah Error</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div id="detailOutput"></div>
+
+    <dl class="legend">
+      <dt>Keterangan Kolom</dt>
+      <dd><strong>No</strong>: Urutan transaksi gagal</dd>
+      <dd><strong>Tanggal</strong>: DD/MM/YYYY atau YYYY-MM-DD dari log</dd>
+      <dd><strong>Waktu</strong>: jam pertama muncul (hh:mm:ss)</dd>
+      <dd><strong>Has Reply</strong>: “Ya” jika ada `TRANSACTION REPLY`</dd>
+      <dd><strong>TSI</strong>: kode 4-hex (7000=online, 6000=offline, -=tidak tercatat)</dd>
+      <dd><strong>Cash</strong>: “Ya” jika ada `CASH REQUEST` atau `PHYSICAL CASSETTE`</dd>
+      <dd><strong>Jumlah Error</strong>: berapa baris `COMMUNICATION ERROR`/`OFFLINE`</dd>
+    </dl>
+  </div>
+
+    <!-- ... bagian HTML atas tetap sama ... -->
 
     <script>
-        let transactions = [];
-        const errorKeywords = [
-            "CHIP CONTACT ERROR",
-            "LOW BILL MIX ERROR",
-            "EMV CARD SECURITY ERROR",
-            "HIGH BILL MIX ERROR",
-            "SMART EMV",
-            "COMMUNICATION ERROR",
-            "COMMUNICATION OFFLINE",
-            "TRANSACTION \\d+ FAILED",
-            "DISPENSER ERROR FLAG",
-            "DISPENSER ERROR",
-            "PHYSICAL CASSETTE \\d+ EMPTY"
-        ];
-    
+        document.getElementById("btnProcess").addEventListener("click", processData);
+  
         function processData() {
-            let inputText = document.getElementById("inputData").value;
-            let lines = inputText.split("\n");
-            let tableBody = document.querySelector("#outputTable tbody");
-            tableBody.innerHTML = "";
-            transactions = [];
-            let currentTransaction = null;
-    
-            lines.forEach((line, index) => {
-                line = line.trim();
-                
-                // Deteksi TRANSACTION START
-                if (line.includes("TRANSACTION START")) {
-                    if (currentTransaction) {
-                        transactions.push(currentTransaction);
-                    }
-                    currentTransaction = {
-                        date: "-",
-                        time: "-",
-                        atm: "-",
-                        resi: "-",
-                        rekening: "-",
-                        jenis: "-",
-                        jumlah: "-",
-                        cashTaken: false,
-                        error: "",
-                        highlight: false
-                    };
-                }
-    
-                if (currentTransaction) {
-                    if (line.includes("CASH TAKEN")) currentTransaction.cashTaken = true;
-                    
-                    let dateMatch = line.match(/(\d{2}\/\d{2}\/\d{2}) (\d{2}:\d{2}:\d{2}) (\w+)/);
-                    if (dateMatch) {
-                        currentTransaction.date = dateMatch[1];
-                        currentTransaction.time = dateMatch[2];
-                        currentTransaction.atm = dateMatch[3];
-                    }
-                    
-                    let resiMatch = line.match(/(NO RESI|REFF NO)\s*:\s*(\d+)/i);
-                    if (resiMatch) currentTransaction.resi = resiMatch[2];
-                    
-                    let rekeningMatch = line.match(/(REKENING|REK\.?|NO\.? REK\.?)\s*:\s*(\d{10,16})/i);
-                    if (rekeningMatch) currentTransaction.rekening = rekeningMatch[2];
-                    
-                    let jumlahMatch = line.match(/JUMLAH\s*:\s*RP\.?\s*([\d,\.]+)/i);
-                    if (jumlahMatch) currentTransaction.jumlah = jumlahMatch[1].replace(/\./g, '');
-                    
-                    if (line.includes("PENARIKAN TUNAI")) currentTransaction.jenis = "Penarikan Tunai";
-                    if (line.includes("INFORMASI SALDO")) currentTransaction.jenis = "Cek Saldo";
-                    if (line.includes("TRANSFER")) currentTransaction.jenis = "Transfer";
-                    if (line.includes("DANA")) currentTransaction.jenis = "Dana";
-    
-                    errorKeywords.forEach(pattern => {
-                        if (new RegExp(pattern, "i").test(line)) {
-                            currentTransaction.error += line + "; ";
-                        }
-                    });
-                }
-    
-                if (index === lines.length - 1 && currentTransaction) {
-                    transactions.push(currentTransaction);
-                }
-            });
-    
-            highlightSurroundedErrors();
-            displayTransactions(transactions);
-        }
-    
-        function highlightSurroundedErrors() {
-            for (let i = 1; i < transactions.length - 1; i++) {
-                if (
-                    transactions[i - 1].resi !== "-" &&
-                    transactions[i + 1].resi !== "-" &&
-                    transactions[i].error !== "" &&
-                    transactions[i].jenis !== "Dana" &&  // Tambahan aturan: Tidak highlight jika jenis transaksi "Dana"
-                    !transactions[i].cashTaken // Tambahan aturan: Tidak highlight jika Cash Taken terisi data (true)
-                ) {
-                    transactions[i].highlight = true;
-                }
+          const raw = document.getElementById("inputData").value.trim();
+          if (!raw) return alert("Masukkan data transaksi terlebih dahulu!");
+  
+          const lines = raw.split("\n").map(l => l.trim());
+          const segments = [];
+          let current = null;
+  
+          // Parse setiap segmen
+          lines.forEach(line => {
+            if (line.includes("TRANSACTION START")) {
+              current = {
+                lines: [], date:null, reply:false, tsi:null, cash:false,
+                errorLines: []
+              };
             }
+            if (!current) return;
+  
+            current.lines.push(line);
+            // Tanggal
+            if (!current.date) {
+              const m = line.match(/(\d{2}\/\d{2}\/\d{2,4}|\d{4}-\d{2}-\d{2})/);
+              if (m) current.date = m[1];
+            }
+            // Reply
+            if (/^TRANSACTION REPLY/i.test(line)) current.reply = true;
+            // TSI
+            const mTSI = line.match(/TSI:\s*([0-9A-Fa-f]{4})/);
+            if (mTSI) current.tsi = mTSI[1];
+            // Cash
+            if (/CASH REQUEST|PHYSICAL CASSETTE/i.test(line)) current.cash = true;
+            // Error
+            if (/COMMUNICATION ERROR|COMMUNICATION OFFLINE/i.test(line)) {
+              current.errorLines.push(line);
+            }
+            // End segmen
+            if (line.includes("TRANSACTION END")) {
+              segments.push(current);
+              current = null;
+            }
+          });
+  
+          // **Filter hanya segmen dengan jumlah error ≥ 2**
+          const filtered = segments.filter(s => s.errorLines.length >= 1);
+  
+          // Render ringkasan tabel
+          const tbody = document.querySelector("#outputTable tbody");
+          tbody.innerHTML = "";
+          filtered.forEach((s, i) => {
+            const row = tbody.insertRow();
+            row.classList.add("failed");
+            const waktu = (s.lines.join(" ").match(/\d{2}:\d{2}:\d{2}/) || ["-"])[0];
+            row.insertCell().textContent = i + 1;
+            row.insertCell().textContent = s.date || "-";
+            row.insertCell().textContent = waktu;
+            row.insertCell().textContent = s.reply ? "Ya" : "Tidak";
+            row.insertCell().textContent = s.tsi || "-";
+            row.insertCell().textContent = s.cash ? "Ya" : "Tidak";
+            row.insertCell().textContent = s.errorLines.length;
+          });
+  
+          // Render detail tiap segmen (error disorot kuning)
+          const detail = document.getElementById("detailOutput");
+          detail.innerHTML = "<h3>Detail Segmen (Error ≥ 1)</h3>";
+          filtered.forEach(s => {
+            const div = document.createElement("div");
+            div.className = "segmentDetail";
+            const pre = document.createElement("pre");
+            pre.innerHTML = s.lines.map(line =>
+              /COMMUNICATION ERROR|COMMUNICATION OFFLINE/.test(line)
+                ? `<span class="errorLine">${line}</span>`
+                : line
+            ).join("\n");
+            div.appendChild(pre);
+            detail.appendChild(div);
+          });
         }
-    
-        function displayTransactions(data) {
-            let tableBody = document.querySelector("#outputTable tbody");
-            tableBody.innerHTML = "";
-            data.forEach((transaction, index) => {
-                let row = tableBody.insertRow();
-                if (transaction.highlight) {
-                    row.style.backgroundColor = "yellow";
-                }
-                row.insertCell(0).textContent = index + 1;
-                row.insertCell(1).textContent = transaction.date;
-                row.insertCell(2).textContent = transaction.time;
-                row.insertCell(3).textContent = transaction.atm;
-                row.insertCell(4).textContent = transaction.resi;
-                row.insertCell(5).textContent = transaction.rekening;
-                row.insertCell(6).textContent = transaction.jenis;
-                row.insertCell(7).textContent = transaction.jumlah !== "-" ? `Rp ${transaction.jumlah}` : "-";
-                row.insertCell(8).textContent = transaction.cashTaken ? "Cash Taken" : "-";
-                row.insertCell(9).textContent = transaction.error || "-";
-            });
-        }
-    
-        function filterNoCashTaken() {
-            displayTransactions(transactions.filter(t => !t.cashTaken));
-        }
-    
-        function filterErrors() {
-            displayTransactions(transactions.filter(t => t.error !== "" && !/bill/i.test(t.error)));
-        }
-    </script>
-    
-
-
+      </script>
+  
 </body>
 </html>
