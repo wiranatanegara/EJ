@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Analisis Data Transaksi ATM </title>
+  <title>Analisis Data Transaksi ATM (Filter Gagal)</title>
   <style>
     body { font-family: Arial, sans-serif; margin:20px; background:#f4f4f4; }
     .container { max-width:900px; margin:auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
@@ -26,7 +26,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Analisis Data Transaksi ATM </h2>
+    <h2>Analisis Data Transaksi ATM (Hanya GAGAL)</h2>
     <textarea id="inputData" placeholder="Salin-paste log transaksi EJ di sini…"></textarea>
     <button id="btnProcess">Tampilkan Hanya Gagal</button>
 
@@ -96,7 +96,7 @@
             // Cash
             if (/CASH REQUEST|PHYSICAL CASSETTE/i.test(line)) current.cash = true;
             // Error
-            if (/COMMUNICATION ERROR|COMMUNICATION OFFLINE/i.test(line)) {
+            if (/COMMUNICATION ERROR|COMMUNICATION OFFLINE|CDM ERROR|FAILED/i.test(line)) {
               current.errorLines.push(line);
             }
             // End segmen
@@ -127,16 +127,17 @@
   
           // Render detail tiap segmen (error disorot kuning)
           const detail = document.getElementById("detailOutput");
-          detail.innerHTML = "<h3>Detail Segmen (Error ≥ 1)</h3>";
+          detail.innerHTML = "<h3>Detail Segmen (Error ≥ )</h3>";
           filtered.forEach(s => {
             const div = document.createElement("div");
             div.className = "segmentDetail";
             const pre = document.createElement("pre");
             pre.innerHTML = s.lines.map(line =>
-              /COMMUNICATION ERROR|COMMUNICATION OFFLINE/.test(line)
+              /COMMUNICATION ERROR|COMMUNICATION OFFLINE|CDM ERROR|FAILED/i.test(line)
                 ? `<span class="errorLine">${line}</span>`
                 : line
             ).join("\n");
+
             div.appendChild(pre);
             detail.appendChild(div);
           });
