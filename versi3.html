@@ -22,6 +22,76 @@
     .legend { margin-top:20px; }
     .legend dt { font-weight:bold; margin-top:10px; }
     .legend dd { margin:0 0 10px 20px; }
+
+
+    .segmentDetail {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    .explanationBox {
+        background: #e9ecef;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #dc3545;
+    }
+    .explanationBox h4 {
+        margin-top: 0;
+        color: #dc3545;
+        font-size: 16px;
+    }
+    .explanationList {
+        list-style: none;
+        padding-left: 0;
+        margin: 10px 0;
+    }
+    .explanationList li {
+        margin-bottom: 8px;
+        padding-left: 20px;
+        position: relative;
+    }
+    .explanationList li:before {
+        content: "•";
+        color: #dc3545;
+        position: absolute;
+        left: 0;
+    }
+
+
+
+    /* Tambahkan CSS untuk kategori risiko */
+.risk-indicator {
+    padding: 8px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    text-align: center;
+}
+.high-risk {
+    background: #dc3545;
+    color: white;
+    border: 2px solid #b02a37;
+}
+.medium-risk {
+    background: #fd7e14;
+    color: white;
+    border: 2px solid #d56a10;
+}
+.low-risk {
+    background: #ffc107;
+    color: black;
+    border: 2px solid #d39e00;
+}
+
+/* Update warna border explanationBox */
+.explanationBox.high-risk { border-left-color: #dc3545; }
+.explanationBox.medium-risk { border-left-color: #fd7e14; }
+.explanationBox.low-risk { border-left-color: #ffc107; }
+
+
+
+
   </style>
 </head>
 <body>
@@ -62,9 +132,9 @@
     <!-- ... bagian HTML atas tetap sama ... -->
 
     <script>
-        document.getElementById("btnProcess").addEventListener("click", processData);
+      document.getElementById("btnProcess").addEventListener("click", processData);
   
-        function processData() {
+      function processData() {
           const raw = document.getElementById("inputData").value.trim();
           if (!raw) return alert("Masukkan data transaksi terlebih dahulu!");
   
@@ -72,77 +142,147 @@
           const segments = [];
           let current = null;
   
-          // Parse setiap segmen
+          // Parsing data log
           lines.forEach(line => {
-            if (line.includes("TRANSACTION START")) {
-              current = {
-                lines: [], date:null, reply:false, tsi:null, cash:false,
-                errorLines: []
-              };
-            }
-            if (!current) return;
+              if (line.includes("TRANSACTION START")) {
+                  current = {
+                      lines: [],
+                      date: null,
+                      reply: false,
+                      tsi: null,
+                      cash: false,
+                      errorLines: []
+                  };
+              }
+              if (!current) return;
   
-            current.lines.push(line);
-            // Tanggal
-            if (!current.date) {
-              const m = line.match(/(\d{2}\/\d{2}\/\d{2,4}|\d{4}-\d{2}-\d{2})/);
-              if (m) current.date = m[1];
-            }
-            // Reply
-            if (/^TRANSACTION REPLY/i.test(line)) current.reply = true;
-            // TSI
-            const mTSI = line.match(/TSI:\s*([0-9A-Fa-f]{4})/);
-            if (mTSI) current.tsi = mTSI[1];
-            // Cash
-            if (/CASH REQUEST|PHYSICAL CASSETTE/i.test(line)) current.cash = true;
-            // Error
-            if (/COMMUNICATION ERROR|COMMUNICATION OFFLINE|CDM ERROR|FAILED/i.test(line)) {
-              current.errorLines.push(line);
-            }
-            // End segmen
-            if (line.includes("TRANSACTION END")) {
-              segments.push(current);
-              current = null;
-            }
+              current.lines.push(line);
+  
+              if (!current.date) {
+                  const dateMatch = line.match(/(\d{2}\/\d{2}\/\d{2,4}|\d{4}-\d{2}-\d{2})/);
+                  if (dateMatch) current.date = dateMatch[1];
+              }
+  
+              if (/^TRANSACTION REPLY/i.test(line)) current.reply = true;
+              
+              const tsiMatch = line.match(/TSI:\s*([0-9A-Fa-f]{4})/);
+              if (tsiMatch) current.tsi = tsiMatch[1];
+              
+              if (/CASH REQUEST|PHYSICAL CASSETTE/i.test(line)) current.cash = true;
+              
+              if (/COMMUNICATION ERROR|COMMUNICATION OFFLINE|CDM ERROR|FAILED/i.test(line)) {
+                  current.errorLines.push(line);
+              }
+              
+              if (line.includes("TRANSACTION END")) {
+                  segments.push(current);
+                  current = null;
+              }
           });
   
-          // **Filter hanya segmen dengan jumlah error ≥ 2**
+          // Filter transaksi dengan error
           const filtered = segments.filter(s => s.errorLines.length >= 1);
   
-          // Render ringkasan tabel
+          // Render tabel utama
           const tbody = document.querySelector("#outputTable tbody");
           tbody.innerHTML = "";
-          filtered.forEach((s, i) => {
-            const row = tbody.insertRow();
-            row.classList.add("failed");
-            const waktu = (s.lines.join(" ").match(/\d{2}:\d{2}:\d{2}/) || ["-"])[0];
-            row.insertCell().textContent = i + 1;
-            row.insertCell().textContent = s.date || "-";
-            row.insertCell().textContent = waktu;
-            row.insertCell().textContent = s.reply ? "Ya" : "Tidak";
-            row.insertCell().textContent = s.tsi || "-";
-            row.insertCell().textContent = s.cash ? "Ya" : "Tidak";
-            row.insertCell().textContent = s.errorLines.length;
+          filtered.forEach((segment, index) => {
+              const row = tbody.insertRow();
+              row.classList.add("failed");
+              const timeMatch = segment.lines.join(" ").match(/\d{2}:\d{2}:\d{2}/);
+              
+              row.innerHTML = `
+                  <td>${index + 1}</td>
+                  <td>${segment.date || "-"}</td>
+                  <td>${timeMatch ? timeMatch[0] : "-"}</td>
+                  <td>${segment.reply ? "Ya" : "Tidak"}</td>
+                  <td>${segment.tsi || "-"}</td>
+                  <td>${segment.cash ? "Ya" : "Tidak"}</td>
+                  <td>${segment.errorLines.length}</td>
+              `;
           });
   
-          // Render detail tiap segmen (error disorot kuning)
-          const detail = document.getElementById("detailOutput");
-          detail.innerHTML = "<h3>Detail Segmen (Error ≥ )</h3>";
-          filtered.forEach(s => {
-            const div = document.createElement("div");
-            div.className = "segmentDetail";
-            const pre = document.createElement("pre");
-            pre.innerHTML = s.lines.map(line =>
-              /COMMUNICATION ERROR|COMMUNICATION OFFLINE|CDM ERROR|FAILED/i.test(line)
-                ? `<span class="errorLine">${line}</span>`
-                : line
-            ).join("\n");
-
-            div.appendChild(pre);
-            detail.appendChild(div);
-          });
-        }
-      </script>
+          // Render detail analisis
+          const detailOutput = document.getElementById("detailOutput");
+          detailOutput.innerHTML = "<h3>Detail Transaksi Gagal</h3>";
   
+          // Fungsi penentu risiko
+          const determineRisk = (segment) => {
+              let riskScore = 0;
+              
+              // Sistem scoring
+              if (segment.errorLines.some(l => l.includes('COMMUNICATION ERROR'))) riskScore += 3;
+              if (segment.errorLines.some(l => l.includes('CDM ERROR'))) riskScore += 2;
+              if (!segment.reply) riskScore += 2;
+              if (segment.tsi === '6000') riskScore += 1;
+              if (segment.cash) riskScore += 1;
+  
+              if (riskScore >= 5) return { class: "high-risk", label: "🟢 BESAR KEMUNGKINAN GAGAL" };
+              if (riskScore >= 3) return { class: "medium-risk", label: "🟠 BERPOTENSI GAGAL" };
+              return { class: "low-risk", label: "🟡 MUNGKIN GAGAL" };
+          };
+  
+          // Fungsi generate penjelasan
+          const generateDiagnosis = (segment) => {
+              const explanations = [];
+              
+              // Deteksi error spesifik
+              const errorMap = {
+                  'COMMUNICATION ERROR': '⛔ Gangguan komunikasi jaringan',
+                  'COMMUNICATION OFFLINE': '⛔ ATM dalam mode offline',
+                  'CDM ERROR': '⛔ Kesalahan mekanik dispenser',
+                  'FAILED': '⛔ Gagal sistem internal'
+              };
+  
+              Object.entries(errorMap).forEach(([key, desc]) => {
+                  if (segment.errorLines.some(line => line.includes(key))) {
+                      explanations.push(desc);
+                  }
+              });
+  
+              // Faktor tambahan
+              if (!segment.reply) explanations.push("⚠️ Tidak menerima respon server");
+              if (segment.tsi === '6000') explanations.push("🔌 Transaksi offline (TSI 6000)");
+              if (segment.tsi === '7000') explanations.push("🌐 Transaksi online (TSI 7000)");
+              if (segment.cash) explanations.push("💵 Transaksi melibatkan uang tunai");
+  
+              return explanations.length > 0 
+                  ? explanations 
+                  : ["❌ Penyebab kegagalan tidak teridentifikasi"];
+          };
+  
+          // Membuat detail untuk setiap transaksi
+          filtered.forEach(segment => {
+              const container = document.createElement("div");
+              container.className = "segmentDetail";
+  
+              // Panel log
+              const logPanel = document.createElement("pre");
+              logPanel.innerHTML = segment.lines.map(line => 
+                  /(ERROR|OFFLINE|FAILED)/i.test(line)
+                      ? `<span class="errorLine">${line}</span>`
+                      : line
+              ).join("\n");
+  
+              // Panel analisis
+              const analysisPanel = document.createElement("div");
+              const risk = determineRisk(segment);
+              const diagnosis = generateDiagnosis(segment);
+              
+              analysisPanel.className = `explanationBox ${risk.class}`;
+              analysisPanel.innerHTML = `
+                  <div class="risk-indicator ${risk.class}">${risk.label}</div>
+                  <h4>Analisis Penyebab</h4>
+                  <ul class="explanationList">
+                      ${diagnosis.map(d => `<li>${d}</li>`).join("")}
+                  </ul>
+              `;
+  
+              container.appendChild(logPanel);
+              container.appendChild(analysisPanel);
+              detailOutput.appendChild(container);
+          });
+      }
+  </script>
 </body>
 </html>
