@@ -3,127 +3,296 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EJ Wira | V.2.0.0</title>
+    <title>Transaksi Comparator</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Courier New', monospace;
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --dark-bg: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #f8f9fa;
         }
-
+        
         body {
-            background: #1e1e1e;
-            color: #00ff00;
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            flex-wrap: wrap;
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 2rem;
         }
-
-        .container {
-            max-width: 450px;
-            margin: 10px;
-        }
-
-        .editor-container {
-            margin-bottom: 20px;
-            background: #2d2d2d;
-            padding: 10px;
+        
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid #333;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
         }
-
-        textarea {
-            width: 100%;
-            height: 200px;
-            background: #1e1e1e;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            padding: 10px;
-            resize: none;
-            border-radius: 5px;
+        
+        .card:hover {
+            transform: translateY(-5px);
         }
-
-        .process-btn {
-            display: block;
-            width: 100%;
-            background: #00ff00;
-            color: #1e1e1e;
-            border: none;
-            padding: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 5px;
-            margin-bottom: 20px;
+        
+        .card-header {
+            background-color: #2a2a2a;
+            border-bottom: 1px solid #333;
+            font-weight: 600;
         }
-
-        .process-btn:hover {
-            background: #00cc00;
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
         }
-
+        
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .btn-outline-secondary {
+            color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .form-control, .form-control:focus {
+            background-color: #2a2a2a;
+            color: var(--text-color);
+            border: 1px solid #444;
+        }
+        
         .output-box {
-            background: #2d2d2d;
+            background-color: #2a2a2a;
+            color: var(--text-color);
+            border-radius: 4px;
             padding: 15px;
-            border: 1px solid #00ff00;
-            border-radius: 8px;
-            min-height: 100px;
-            white-space: pre-wrap;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre;
         }
-
-        h2 {
+        
+        .table-dark {
+            --bs-table-bg: #2a2a2a;
+            --bs-table-striped-bg: #252525;
+            --bs-table-hover-bg: #333;
+            margin-bottom: 0;
+        }
+        
+        .table-dark th {
+            background-color: #343a40;
+            font-weight: 600;
+        }
+        
+        .result-container {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .btn-group-custom .btn {
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .section-title {
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+        
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .btn-icon i {
+            margin-right: 8px;
+        }
+        
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+        
+        .bg-found {
+            background-color: var(--success-color);
+        }
+        
+        .bg-not-found {
+            background-color: #dc3545;
+        }
+        
+        .transaction-table th {
+            white-space: nowrap;
+        }
+        
+        .transaction-table td {
+            vertical-align: middle;
+        }
+        
+        .table-responsive {
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        footer {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #333;
+        }
+        
+        .empty-state {
             text-align: center;
-            margin-bottom: 15px;
+            padding: 2rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
         }
     </style>
 </head>
 <body>
+    <div class="container py-4">
+        <header class="text-center mb-5">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="bi bi-arrow-left-right"></i> Transaction Comparator
+            </h1>
+            <p class="lead text-secondary">Bandingkan transaksi lama dan baru untuk menemukan perbedaan</p>
+        </header>
 
-    <div class="container">
-        <h2>Filter EJ</h2>
-        
-        <div class="editor-container">
-            <label>Masukkan Data EJ:</label>
-            <textarea id="input1" placeholder="Paste EJ di sini..."></textarea>
+        <div class="row">
+            <!-- Input 1 Section -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-file-earmark-text"></i> Data Lama</span>
+                        <span class="status-badge" id="oldDataStatus">Belum diproses</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Format: <code>[waktu] [rekening]</code></label>
+                            <textarea id="input1" class="form-control" rows="5" placeholder="Contoh:
+08:45:23 1234567890
+08:45:23 2345678901
+09:12:45 3456789012"></textarea>
+                        </div>
+                        <div class="d-flex flex-wrap btn-group-custom">
+                            <button class="btn btn-primary btn-icon" onclick="processTransactions()">
+                                <i class="bi bi-gear"></i> Proses Data Lama
+                            </button>
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label">Hasil Proses:</label>
+                            <div id="output1" class="output-box">Tidak ada transaksi ditemukan.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input 2 Section -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-file-earmark-plus"></i> Data Baru</span>
+                        <span class="status-badge" id="newDataStatus">Belum diproses</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Format: <code>[rekening] [nama] [nominal] [waktu]</code></label>
+                            <textarea id="input2" class="form-control" rows="5" placeholder="Contoh:
+1234567890 JOHN DOE 1,000,000.00 08:45:23
+2345678901 JANE SMITH 500,000.00 08:45:23
+4567890123 MIKE BROWN 750,000.00 09:30:15
+
+Atau format lain:
+2 0077012958 ELSYE NELLY MARIA.P 500,000.00 TARIK TUNAI ON US 1 18:01:32"></textarea>
+                        </div>
+                        <div class="d-flex flex-wrap btn-group-custom">
+                            <button class="btn btn-primary btn-icon" onclick="processNewTransactions()">
+                                <i class="bi bi-gear"></i> Proses Data Baru
+                            </button>
+                            <button class="btn btn-success btn-icon" onclick="compareTransactions()">
+                                <i class="bi bi-compare"></i> Bandingkan Data
+                            </button>
+                            <!-- Tombol untuk membuka modal -->
+<button class="btn btn-outline-secondary btn-icon" data-bs-toggle="modal" data-bs-target="#adjustModal">
+    <i class="bi bi-pencil-square"></i> Sesuaikan Data
+</button>
+
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label">Hasil Proses:</label>
+                            <div id="output2" class="output-box">Tidak ada transaksi ditemukan.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <button class="process-btn" onclick="processTransactions()">Proses Data</button>
-
-        <div class="editor-container">
-            <h3>Hasil Filter:</h3>
-            <div class="output-box" id="output1"></div>
+        <!-- Results Section -->
+        <div class="result-container">
+            <h3 class="section-title"><i class="bi bi-clipboard2-data"></i> Hasil Perbandingan</h3>
+            
+            <div class="row">
+                <!-- Differences -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-filter-circle"></i> Data Baru yang Tidak Ada di Data Lama</span>
+                            <span class="status-badge" id="diffStatus">Belum dibandingkan</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="output3" class="output-box">Tidak ada perbedaan ditemukan.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Detailed Table -->
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-table"></i> Detail Transaksi Baru</span>
+                            <span class="status-badge" id="tableStatus">Belum ada data</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="output4" class="table-responsive">
+                                <div class="empty-state">
+                                    <i class="bi bi-table"></i>
+                                    <p class="text-muted">Tidak ada data untuk ditampilkan</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <footer class="text-center mt-5 text-secondary">
+            <p>Transaction Comparator &copy; 2023 | Dibuat dengan <i class="bi bi-heart-fill text-danger"></i></p>
+        </footer>
     </div>
 
-    <div class="container">
-        <h2>Filter Spoll-an</h2>
-
-        <div class="editor-container">
-            <label>Masukkan Data Spoll:</label>
-            <textarea id="input2" placeholder="Paste spoll baru di sini..."></textarea>
-        </div>
-
-        <button class="process-btn" onclick="processNewTransactions()">Proses Data Baru</button>
-
-        <div class="editor-container">
-            <h3>Hasil Filter Spoll:</h3>
-            <div class="output-box" id="output2"></div>
-        </div>
-    </div>
-
-    <div class="container">
-        <h2>Perbandingan Data</h2>
-
-        <button class="process-btn" onclick="compareTransactions()">Bandingkan</button>
-
-        <div class="editor-container">
-            <h3>Transaksi Berpontensi Gagal:</h3>
-            <div class="output-box" id="output3"></div>
-        </div>
-    </div>
-
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
         let oldTransactions = [];
         let newTransactions = [];
@@ -134,7 +303,6 @@
             let currentTime = '';
 
             const lines = text.split('\n');
-
             lines.forEach(line => {
                 const timeMatch = line.match(/^\d{2}:\d{2}:\d{2}/);
                 if (timeMatch) currentTime = timeMatch[0];
@@ -147,6 +315,8 @@
 
             oldTransactions = transactions;
             document.getElementById('output1').textContent = transactions.join('\n') || "Tidak ada transaksi ditemukan.";
+            document.getElementById('oldDataStatus').textContent = transactions.length + " transaksi ditemukan";
+            document.getElementById('oldDataStatus').className = "status-badge bg-found";
         }
 
         function processNewTransactions() {
@@ -155,17 +325,30 @@
 
             const lines = text.split('\n');
             lines.forEach(line => {
-                const match = line.match(/(\d{10})\s+([A-Z ]+)\s+(\d{1,3}(?:,\d{3})*\.\d{2})/);
+                // Regex yang lebih robust untuk menangani berbagai format
+                const match = line.match(/(\d{10,})\s+([A-Z .']+)\s+([\d,.]+)\s+.*?(\d{2}:\d{2}:\d{2})/i);
+
                 if (match) {
-                    transactions.push(`${match[1]}  ${match[2].trim()}  ${match[3]}`);
+                    const rekening = match[1];
+                    const nama = match[2].trim();
+                    const nominal = match[3];
+                    const jam = match[4];
+                    transactions.push(`${rekening}  ${nama}  ${nominal}  ${jam}`);
                 }
             });
 
             newTransactions = transactions;
             document.getElementById('output2').textContent = transactions.join('\n') || "Tidak ada transaksi ditemukan.";
+            document.getElementById('newDataStatus').textContent = transactions.length + " transaksi ditemukan";
+            document.getElementById('newDataStatus').className = "status-badge bg-found";
         }
 
         function compareTransactions() {
+            if (oldTransactions.length === 0 || newTransactions.length === 0) {
+                alert("Silakan proses kedua data terlebih dahulu!");
+                return;
+            }
+            
             const oldSet = new Set(oldTransactions.map(item => item.split("  ")[0]));
             const diff = newTransactions.filter(item => {
                 const accountNumber = item.split("  ")[0];
@@ -173,8 +356,136 @@
             });
 
             document.getElementById('output3').textContent = diff.join('\n') || "Tidak ada perbedaan ditemukan.";
+            document.getElementById('diffStatus').textContent = diff.length + " perbedaan ditemukan";
+            document.getElementById('diffStatus').className = diff.length > 0 ? "status-badge bg-found" : "status-badge bg-not-found";
+            
+            showDetailedTable(diff);
         }
+
+        function showDetailedTable(diffList) {
+            const tableData = [];
+
+            diffList.forEach(diffLine => {
+                const parts = diffLine.split("  ");
+                if (parts.length >= 4) {
+                    const rekening = parts[0];
+                    const nama = parts[1];
+                    const nominal = parts[2];
+                    const jam = parts[3];
+                    tableData.push({ rekening, nama, nominal, jam });
+                }
+            });
+
+            // Update status badge
+            const tableStatus = document.getElementById('tableStatus');
+            tableStatus.textContent = tableData.length + " transaksi";
+            tableStatus.className = tableData.length > 0 ? "status-badge bg-found" : "status-badge bg-not-found";
+
+            // Buat tabel jika ada data
+            if (tableData.length > 0) {
+                let tableHTML = `
+                    <table class="table table-dark table-striped table-hover transaction-table">
+                        <thead>
+                            <tr>
+                                <th><i class="bi bi-credit-card"></i> Rekening</th>
+                                <th><i class="bi bi-person"></i> Nama</th>
+                                <th><i class="bi bi-cash"></i> Nominal</th>
+                                <th><i class="bi bi-clock"></i> Jam</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                
+                tableData.forEach(row => {
+                    tableHTML += `
+                        <tr>
+                            <td>${row.rekening}</td>
+                            <td>${row.nama}</td>
+                            <td>${row.nominal}</td>
+                            <td>${row.jam}</td>
+                        </tr>`;
+                });
+                
+                tableHTML += `</tbody></table>`;
+                document.getElementById('output4').innerHTML = tableHTML;
+            } else {
+                document.getElementById('output4').innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <p class="text-muted">Tidak ada data untuk ditampilkan</p>
+                    </div>`;
+            }
+        }
+
+
+function adjustAndConvert() {
+    const text = document.getElementById('rawReport').value;
+    const lines = text.split('\n');
+    const output = [];
+
+    const regex = /^\s*\d+\s+(\d{10,})\s+([A-Z '.]+?)\s+([\d,.]+)\s+(?:[A-Z ]+)?\s+\d+\s+(\d{1,2}:\d{2}:\d{2})$/i;
+
+    lines.forEach(line => {
+        const match = line.match(regex);
+        if (match) {
+            const rekening = match[1];
+            const nama = match[2].replace(/\s+/g, ' ').trim(); // Normalisasi spasi
+            const nominal = match[3].replace(/\.(?=\d{3})/g, '').replace(',', '.');
+            const jam = match[4].padStart(8, '0'); // Misal: '7:38:16' jadi '07:38:16'
+            output.push(`${rekening} ${nama} ${nominal} ${jam}`);
+        }
+    });
+
+    const result = output.length > 0 ? output.join('\n') : "Tidak ditemukan data yang sesuai format.";
+    document.getElementById('adjustedOutput').textContent = result;
+}
+
+function copyAdjustedOutput() {
+    const output = document.getElementById('adjustedOutput').textContent;
+    if (!output || output.trim() === "Belum ada hasil.") {
+        alert("Belum ada hasil untuk disalin.");
+        return;
+    }
+
+    navigator.clipboard.writeText(output)
+        .then(() => alert("Output berhasil disalin ke clipboard."))
+        .catch(err => alert("Gagal menyalin: " + err));
+}
+
+
+
     </script>
+
+   <!-- Modal Penyesuaian Data -->
+<div class="modal fade" id="adjustModal" tabindex="-1" aria-labelledby="adjustModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adjustModalLabel"><i class="bi bi-sliders"></i> Penyesuaian Format Data</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Tempelkan data laporan di bawah ini:</label>
+                    <textarea id="rawReport" class="form-control" rows="10" placeholder="Tempelkan laporan di sini..."></textarea>
+                </div>
+                <div class="mb-3 d-flex gap-2">
+                    <button class="btn btn-success btn-icon" onclick="adjustAndConvert()">
+                        <i class="bi bi-magic"></i> Proses dan Sesuaikan
+                    </button>
+                    <button class="btn btn-outline-light btn-icon" onclick="copyAdjustedOutput()">
+                        <i class="bi bi-clipboard"></i> Salin Output
+                    </button>
+                </div>
+                <div>
+                    <label class="form-label">Hasil Format untuk Input 2:</label>
+                    <pre class="output-box bg-secondary p-3 rounded" id="adjustedOutput" style="white-space: pre-wrap;">Belum ada hasil.</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 </body>
 </html>
